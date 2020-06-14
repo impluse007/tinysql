@@ -70,9 +70,24 @@ func EncodeRowKeyWithHandle(tableID int64, handle int64) kv.Key {
 }
 
 // DecodeRecordKey decodes the key and gets the tableID, handle.
-func DecodeRecordKey(key kv.Key) (tableID int64, handle int64, err error) {
-	/* Your code here */
-	return
+func DecodeRecordKey(key kv.Key) (tableID int64, handle int64, err error) { //code
+	if !key.HasPrefix(tablePrefix) {
+		return 0, 0, errors.New("invalid key tablePrefix")
+	}
+	key = key[tablePrefixLength:]
+	key, tableID, err = codec.DecodeInt(key)
+	if err != nil {
+		return 0, 0, errors.Trace(err)
+	}
+	if !key.HasPrefix(recordPrefixSep) {
+		return 0, 0, errors.New("invalid key recordPrefixSep")
+	}
+	key = key[recordPrefixSepLength:]
+	key, handle, err = codec.DecodeInt(key)
+	if err != nil {
+		return 0, 0, errors.Trace(err)
+	}
+	return tableID, handle, nil
 }
 
 // appendTableIndexPrefix appends table index prefix  "t[tableID]_i".
@@ -93,8 +108,24 @@ func EncodeIndexSeekKey(tableID int64, idxID int64, encodedValue []byte) kv.Key 
 }
 
 // DecodeIndexKeyPrefix decodes the key and gets the tableID, indexID, indexValues.
-func DecodeIndexKeyPrefix(key kv.Key) (tableID int64, indexID int64, indexValues []byte, err error) {
-	/* Your code here */
+func DecodeIndexKeyPrefix(key kv.Key) (tableID int64, indexID int64, indexValues []byte, err error) { //code
+	if !key.HasPrefix(tablePrefix) {
+		return 0, 0, nil, errors.New("invalid key tablePrefix")
+	}
+	key = key[tablePrefixLength:]
+	key, tableID, err = codec.DecodeInt(key)
+	if err != nil {
+		return 0, 0, nil, errors.Trace(err)
+	}
+	if !key.HasPrefix(indexPrefixSep) {
+		return 0, 0, nil, errors.New("invalid key indexPrefixSep")
+	}
+	key = key[len(indexPrefixSep):]
+	key, indexID, err = codec.DecodeInt(key)
+	if err != nil {
+		return 0, 0, nil, errors.Trace(err)
+	}
+	indexValues = key
 	return tableID, indexID, indexValues, nil
 }
 
